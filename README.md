@@ -1,81 +1,40 @@
+
 # Workload-Aware Adaptive CPU Scheduler and Performance Analyzer
 
-## Subtask 1: Python foundation + process model + scheduler interface
+## CPU Scheduling Policies
 
-### Structure
-```text
-adaptive-cpu-scheduler/
-├── core/
-│   ├── __init__.py
-│   ├── process.py
-│   └── scheduler.py
-├── schedulers/
-│   ├── __init__.py
-│   └── demo_scheduler.py
-├── tests/
-│   ├── __init__.py
-│   └── test_process.py
-├── main.py
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
+The simulator now supports four conventional scheduling policies:
 
-## Windows setup with venv
+- **FCFS** — First-Come, First-Served
+- **SJF** — Shortest Job First
+- **SRTF** — Shortest Remaining Time First
+- **Round Robin** — configurable time quantum
 
-Open CMD in this folder:
+All policies implement the same scheduler interface and plug into the same discrete-event CPU simulation engine.
+
+### FCFS
+Non-preemptive. Processes are selected in ready-queue order.
+
+### SJF
+Non-preemptive. Selects the ready process with the smallest current CPU burst.
+
+### SRTF
+Preemptive. If a newly ready process has a smaller remaining burst than the running process, the CPU is reassigned.
+
+### Round Robin
+Preemptive. Each process receives a configurable time quantum. Quantum expiry is treated as a simulation event, so Round Robin also works when no new process arrives.
+
+## Run
 
 ```cmd
-python -m venv .venv
 .venv\Scripts\activate
-python -m pip install --upgrade pip
 pip install -r requirements.txt
-```
-
-Run the foundation:
-
-```cmd
 python main.py
-```
-
-Run tests:
-
-```cmd
 python -m pytest
-```
-
-Deactivate:
-
-```cmd
-deactivate
-```
-
-Do NOT commit `.venv`.
-
-## Expected main output
-
-```text
-Workload-Aware Adaptive CPU Scheduler
-Subtask 1: project foundation initialized successfully.
-
-Process ID       : 1
-Arrival Time     : 0
-Priority         : 2
-CPU Bursts       : [10, 5]
-I/O Bursts       : [4]
-Initial State    : NEW
-Current CPU Burst: 10
-
-Scheduler        : Demo Scheduler
-Next Process     : PID 1
 ```
 
 ## Commit
 
 ```text
-feat(core): initialize Python scheduler architecture and process model
+feat(schedulers): implement FCFS SJF SRTF and Round Robin policies
 ```
-
-## CPU execution timeline behavior
-
-The timeline records continuous CPU ownership. If another process arrives while the current process continues running, the arrival is recorded as an event but does not split the current execution segment. A segment is split only when CPU ownership actually changes, such as completion or preemption.

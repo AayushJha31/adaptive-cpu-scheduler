@@ -31,7 +31,7 @@ class SimulationEvent:
 
 
 class SimulationResult:
-    """Immutable-style result container returned by the simulator."""
+    """Results produced by a completed CPU simulation."""
 
     def __init__(
         self,
@@ -47,7 +47,7 @@ class SimulationResult:
 
     @property
     def completed_processes(self) -> int:
-        return sum(process.is_completed() for process in self.processes)
+        return sum(p.is_completed() for p in self.processes)
 
     @property
     def cpu_busy_time(self) -> int:
@@ -64,8 +64,7 @@ class SimulationResult:
         for segment in self.execution_timeline:
             print(
                 f"t={segment.start_time:>3} -> "
-                f"t={segment.end_time:>3} : "
-                f"P{segment.pid}"
+                f"t={segment.end_time:>3} : P{segment.pid}"
             )
 
     def print_events(self) -> None:
@@ -75,20 +74,22 @@ class SimulationResult:
         for event in self.events:
             process_text = f" P{event.pid}" if event.pid is not None else ""
             detail_text = f" - {event.details}" if event.details else ""
-            print(f"t={event.time:>3} {event.event_type}{process_text}{detail_text}")
+            print(
+                f"t={event.time:>3} {event.event_type}"
+                f"{process_text}{detail_text}"
+            )
 
 
 class CPUSimulation:
     """
     Discrete-event CPU simulation engine.
 
-    The scheduler owns ready-queue selection. The simulation engine owns
-    time progression, arrivals, CPU execution, dispatching, preemption
-    boundaries, and completion.
+    The engine is independent of the scheduling policy. It handles arrivals,
+    CPU ownership, time progression, dispatch, preemption boundaries,
+    completion, and the execution timeline.
 
-    The engine currently models one CPU burst per process. The Process model
-    already supports multiple CPU bursts; I/O event handling will be added
-    when the workload and scheduling layers are expanded.
+    Each process currently contains exactly one CPU burst. Multi-burst/I/O
+    behavior can be added later without changing the scheduler interface.
     """
 
     def __init__(
@@ -98,17 +99,15 @@ class CPUSimulation:
     ) -> None:
         self._processes = list(processes)
         self._scheduler = scheduler
-
         self._validate_processes()
 
         self._arrival_index = sorted(
             range(len(self._processes)),
-            key=lambda index: (
-                self._processes[index].arrival_time,
-                self._processes[index].pid,
+            key=lambda i: (
+                self._processes[i].arrival_time,
+                self._processes[i].pid,
             ),
         )
-
         self._next_arrival_index = 0
         self._current_time = 0
         self._running_process: Process | None = None
@@ -122,13 +121,12 @@ class CPUSimulation:
         for process in self._processes:
             if process.pid in seen_pids:
                 raise ValueError(f"Duplicate process ID: {process.pid}")
-
             seen_pids.add(process.pid)
 
             if len(process.cpu_bursts) != 1:
                 raise NotImplementedError(
-                    "The CPU simulation engine currently requires exactly "
-                    "one CPU burst per process."
+                    "The current CPU simulation requires exactly one "
+                    "CPU burst per process."
                 )
 
     def _record_event(
@@ -147,9 +145,10 @@ class CPUSimulation:
         )
 
     def _add_arrivals(self) -> None:
-        """Move every process arriving now into the scheduler."""
         while self._next_arrival_index < len(self._arrival_index):
-            process = self._processes[self._arrival_index[self._next_arrival_index]]
+            process = self._processes[
+                self._arrival_index[self._next_arrival_index]
+            ]
 
             if process.arrival_time > self._current_time:
                 break
@@ -167,12 +166,10 @@ class CPUSimulation:
             )
 
     def _dispatch(self) -> bool:
-        """Select the next ready process and dispatch it to the CPU."""
         if self._running_process is not None:
             return True
 
         process = self._scheduler.get_next_process()
-
         if process is None:
             return False
 
@@ -181,6 +178,8 @@ class CPUSimulation:
 
         if process.first_start_time is None:
             process.set_first_start_time(self._current_time)
+
+        self._scheduler.on_dispatch(process, self._current_time)
 
         self._record_event(
             "DISPATCH",
@@ -193,29 +192,25 @@ class CPUSimulation:
         if self._next_arrival_index >= len(self._arrival_index):
             return None
 
-        index = self._arrival_index[self._next_arrival_index]
-        return self._processes[index].arrival_time
+        process = self._processes[
+            self._arrival_index[self._next_arrival_index]
+        ]
+        return process.arrival_time
 
     def _execute_until(self, end_time: int) -> None:
-        """Execute the current process until the requested event boundary."""
         if self._running_process is None:
             self._current_time = end_time
             return
 
         duration = end_time - self._current_time
-
         if duration <= 0:
             return
 
         process = self._running_process
         start_time = self._current_time
-
         process.execute(duration)
         self._current_time = end_time
 
-        # An arrival event does not necessarily mean the running process
-        # stopped using the CPU. Keep the execution timeline continuous
-        # unless the CPU actually changes ownership.
         if self._timeline:
             last = self._timeline[-1]
             if last.pid == process.pid and last.end_time == start_time:
@@ -239,7 +234,6 @@ class CPUSimulation:
             return
 
         process = self._running_process
-
         if not process.current_cpu_burst_completed():
             return
 
@@ -249,10 +243,9 @@ class CPUSimulation:
             process.pid,
             "CPU burst completed and process terminated",
         )
-
         self._running_process = None
 
-    def _preempt_running_process(self) -> None:
+    def _preempt_running_process(self, reason: str) -> None:
         if self._running_process is None:
             return
 
@@ -263,13 +256,11 @@ class CPUSimulation:
         self._record_event(
             "PREEMPT",
             process.pid,
-            "Running process returned to the ready queue",
+            reason,
         )
-
         self._running_process = None
 
     def run(self) -> SimulationResult:
-        """Run the complete simulation and return its execution history."""
         if not self._processes:
             return SimulationResult([], [], [], 0)
 
@@ -279,19 +270,15 @@ class CPUSimulation:
             if self._running_process is None:
                 if not self._dispatch():
                     next_arrival = self._next_arrival_time()
-
                     if next_arrival is None:
                         break
 
                     if next_arrival > self._current_time:
                         self._record_event(
                             "CPU_IDLE",
-                            details=(
-                                f"CPU idle until t={next_arrival}"
-                            ),
+                            details=f"CPU idle until t={next_arrival}",
                         )
                         self._current_time = next_arrival
-
                     continue
 
             process = self._running_process
@@ -301,21 +288,43 @@ class CPUSimulation:
                 self._current_time + process.remaining_burst
             )
             next_arrival = self._next_arrival_time()
+            next_policy_boundary = self._scheduler.next_preemption_time(
+                process,
+                self._current_time,
+            )
 
-            if next_arrival is None or completion_time <= next_arrival:
-                self._execute_until(completion_time)
+            candidates = [completion_time]
+
+            if next_arrival is not None:
+                candidates.append(next_arrival)
+
+            if (
+                next_policy_boundary is not None
+                and next_policy_boundary > self._current_time
+            ):
+                candidates.append(next_policy_boundary)
+
+            next_time = min(candidates)
+            self._execute_until(next_time)
+
+            # Completion has priority when the CPU burst ends now.
+            if process.current_cpu_burst_completed():
                 self._complete_running_process()
                 continue
 
-            # An arrival happens before the running process completes.
-            self._execute_until(next_arrival)
+            # Arrivals at this time enter the ready queue before an
+            # arrival-driven preemption decision is made.
             self._add_arrivals()
 
-            if self._scheduler.should_preempt(
+            should_preempt = self._scheduler.should_preempt(
                 process,
                 self._current_time,
-            ):
-                self._preempt_running_process()
+            )
+
+            if should_preempt:
+                self._preempt_running_process(
+                    "Scheduler requested CPU preemption"
+                )
 
         return SimulationResult(
             execution_timeline=self._timeline,
