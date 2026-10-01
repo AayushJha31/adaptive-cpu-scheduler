@@ -1,6 +1,6 @@
 # Workload-Aware Adaptive CPU Scheduler and Performance Analyzer
 
-## Python foundation + process model + scheduler interface
+## Subtask 1: Python foundation + process model + scheduler interface
 
 ### Structure
 ```text
@@ -75,3 +75,7 @@ Next Process     : PID 1
 ```text
 feat(core): initialize Python scheduler architecture and process model
 ```
+
+## CPU execution timeline behavior
+
+The timeline records continuous CPU ownership. If another process arrives while the current process continues running, the arrival is recorded as an event but does not split the current execution segment. A segment is split only when CPU ownership actually changes, such as completion or preemption.
