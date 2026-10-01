@@ -111,6 +111,7 @@ class CPUSimulation:
         self._next_arrival_index = 0
         self._current_time = 0
         self._running_process: Process | None = None
+        self._ready_since: dict[int, int] = {}
 
         self._timeline: list[ExecutionSegment] = []
         self._events: list[SimulationEvent] = []
@@ -159,6 +160,7 @@ class CPUSimulation:
                 continue
 
             self._scheduler.add_process(process)
+            self._ready_since[process.pid] = self._current_time
             self._record_event(
                 "ARRIVAL",
                 process.pid,
@@ -175,6 +177,12 @@ class CPUSimulation:
 
         self._running_process = process
         process.set_state(ProcessState.RUNNING)
+
+        ready_time = self._ready_since.pop(process.pid, None)
+        if ready_time is not None:
+            process.add_waiting_time(
+                max(0, self._current_time - ready_time)
+            )
 
         if process.first_start_time is None:
             process.set_first_start_time(self._current_time)
@@ -257,6 +265,8 @@ class CPUSimulation:
         else:
             process.set_state(ProcessState.READY)
             self._scheduler.add_process(process)
+
+        self._ready_since[process.pid] = self._current_time
 
         self._record_event(
             "PREEMPT",

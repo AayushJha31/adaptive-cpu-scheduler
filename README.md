@@ -1,44 +1,38 @@
 
 # Workload-Aware Adaptive CPU Scheduler and Performance Analyzer
 
-## Advanced CPU Scheduling Policies
+## Performance Analysis
 
-The simulator now includes:
+The simulator now records and calculates:
 
-- FCFS
-- SJF
-- SRTF
-- Round Robin
-- Priority Scheduling with aging
-- Multi-Level Feedback Queue (MLFQ)
+- Average waiting time
+- Average turnaround time
+- Average response time
+- Throughput
+- CPU utilization
+- Context switches
+- Jain's fairness index
+- Starvation count
 
-### Priority Scheduling
+Waiting time is measured from the time a process enters the READY state until it is dispatched. This includes additional waiting caused by preemption.
 
-Lower numeric priority means higher priority.
-
-A waiting process receives an effective priority improvement after each configured aging interval. This provides an explicit mechanism for reducing starvation.
-
-Example:
-
-```python
-PriorityScheduler(aging_interval=5)
-```
-
-### MLFQ
-
-New processes start in the highest-priority queue. Each queue has a different time quantum.
-
-Default configuration:
+### Metric definitions
 
 ```text
-Queue 0 -> quantum 2
-Queue 1 -> quantum 4
-Queue 2 -> quantum 8
+Turnaround = completion time - arrival time
+
+Response = first CPU start time - arrival time
+
+Throughput = completed processes / simulation end time
+
+CPU utilization = CPU busy time / simulation end time × 100
+
+Jain fairness = (sum(x))² / (n × sum(x²))
 ```
 
-Processes that consume their full quantum without completing are demoted. Higher-priority queues can preempt lower-priority running processes.
+The current fairness calculation uses process turnaround times as the comparison values. This definition is kept explicit so that experiments can use the same metric consistently.
 
-The design also includes a priority-boost operation that can move waiting processes back to the highest queue.
+Starvation is counted using a configurable waiting-time threshold.
 
 ## Run
 
@@ -52,5 +46,5 @@ python -m pytest
 ## Git commit
 
 ```text
-feat(schedulers): add priority scheduling with aging and MLFQ
+feat(metrics): add performance analysis and simulation reporting
 ```

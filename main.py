@@ -1,39 +1,42 @@
 
+from core.analysis import analyze_simulation
 from core.process import Process
+from core.reporting import format_analysis
 from core.simulation import CPUSimulation
-from schedulers.mlfq import MLFQScheduler
-from schedulers.priority import PriorityScheduler
+from schedulers.fcfs import FCFSScheduler
+from schedulers.round_robin import RoundRobinScheduler
 
 
 def main() -> None:
     print("Workload-Aware Adaptive CPU Scheduler")
-    print("Advanced scheduling policies initialized.")
+    print("Performance analysis initialized.")
     print()
 
     workload = [
-        Process(1, 0, 5, [8]),
-        Process(2, 1, 2, [3]),
-        Process(3, 2, 4, [5]),
+        (1, 0, 2, [8]),
+        (2, 1, 1, [3]),
+        (3, 2, 3, [5]),
     ]
 
-    for scheduler_class in (PriorityScheduler, MLFQScheduler):
+    schedulers = [
+        FCFSScheduler(),
+        RoundRobinScheduler(time_quantum=2),
+    ]
+
+    for scheduler in schedulers:
         processes = [
-            Process(
-                p.pid,
-                p.arrival_time,
-                p.priority,
-                p.cpu_bursts,
-                p.io_bursts,
-            )
-            for p in workload
+            Process(pid, arrival, priority, bursts)
+            for pid, arrival, priority, bursts in workload
         ]
 
-        scheduler = scheduler_class()
         result = CPUSimulation(processes, scheduler).run()
+        analysis = analyze_simulation(result, scheduler.name)
 
+        print("=" * 52)
         print(scheduler.name)
         result.print_timeline()
-        print(f"Completion time: {result.end_time}")
+        print()
+        print(format_analysis(analysis))
         print()
 
 
