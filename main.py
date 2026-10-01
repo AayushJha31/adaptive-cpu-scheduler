@@ -1,39 +1,37 @@
 
 from core.process import Process
 from core.simulation import CPUSimulation
-from schedulers.fcfs import FCFSScheduler
-from schedulers.sjf import SJFScheduler
-from schedulers.srtf import SRTFScheduler
-from schedulers.round_robin import RoundRobinScheduler
+from schedulers.mlfq import MLFQScheduler
+from schedulers.priority import PriorityScheduler
 
 
 def main() -> None:
     print("Workload-Aware Adaptive CPU Scheduler")
-    print("CPU scheduling policies initialized.")
+    print("Advanced scheduling policies initialized.")
     print()
 
-    policies = [
-        FCFSScheduler(),
-        SJFScheduler(),
-        SRTFScheduler(),
-        RoundRobinScheduler(time_quantum=2),
-    ]
-
     workload = [
-        (1, 0, 2, [8]),
-        (2, 1, 1, [3]),
-        (3, 2, 3, [5]),
+        Process(1, 0, 5, [8]),
+        Process(2, 1, 2, [3]),
+        Process(3, 2, 4, [5]),
     ]
 
-    for scheduler in policies:
+    for scheduler_class in (PriorityScheduler, MLFQScheduler):
         processes = [
-            Process(pid, arrival, priority, bursts)
-            for pid, arrival, priority, bursts in workload
+            Process(
+                p.pid,
+                p.arrival_time,
+                p.priority,
+                p.cpu_bursts,
+                p.io_bursts,
+            )
+            for p in workload
         ]
 
+        scheduler = scheduler_class()
         result = CPUSimulation(processes, scheduler).run()
 
-        print(f"{scheduler.name}")
+        print(scheduler.name)
         result.print_timeline()
         print(f"Completion time: {result.end_time}")
         print()

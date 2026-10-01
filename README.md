@@ -1,28 +1,44 @@
 
 # Workload-Aware Adaptive CPU Scheduler and Performance Analyzer
 
-## CPU Scheduling Policies
+## Advanced CPU Scheduling Policies
 
-The simulator now supports four conventional scheduling policies:
+The simulator now includes:
 
-- **FCFS** — First-Come, First-Served
-- **SJF** — Shortest Job First
-- **SRTF** — Shortest Remaining Time First
-- **Round Robin** — configurable time quantum
+- FCFS
+- SJF
+- SRTF
+- Round Robin
+- Priority Scheduling with aging
+- Multi-Level Feedback Queue (MLFQ)
 
-All policies implement the same scheduler interface and plug into the same discrete-event CPU simulation engine.
+### Priority Scheduling
 
-### FCFS
-Non-preemptive. Processes are selected in ready-queue order.
+Lower numeric priority means higher priority.
 
-### SJF
-Non-preemptive. Selects the ready process with the smallest current CPU burst.
+A waiting process receives an effective priority improvement after each configured aging interval. This provides an explicit mechanism for reducing starvation.
 
-### SRTF
-Preemptive. If a newly ready process has a smaller remaining burst than the running process, the CPU is reassigned.
+Example:
 
-### Round Robin
-Preemptive. Each process receives a configurable time quantum. Quantum expiry is treated as a simulation event, so Round Robin also works when no new process arrives.
+```python
+PriorityScheduler(aging_interval=5)
+```
+
+### MLFQ
+
+New processes start in the highest-priority queue. Each queue has a different time quantum.
+
+Default configuration:
+
+```text
+Queue 0 -> quantum 2
+Queue 1 -> quantum 4
+Queue 2 -> quantum 8
+```
+
+Processes that consume their full quantum without completing are demoted. Higher-priority queues can preempt lower-priority running processes.
+
+The design also includes a priority-boost operation that can move waiting processes back to the highest queue.
 
 ## Run
 
@@ -33,8 +49,8 @@ python main.py
 python -m pytest
 ```
 
-## Commit
+## Git commit
 
 ```text
-feat(schedulers): implement FCFS SJF SRTF and Round Robin policies
+feat(schedulers): add priority scheduling with aging and MLFQ
 ```

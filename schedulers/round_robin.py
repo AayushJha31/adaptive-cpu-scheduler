@@ -49,7 +49,7 @@ class RoundRobinScheduler(Scheduler):
 
         return self._quantum_start + self._time_quantum
 
-    def requeue_after_preemption(self, process: Process) -> None:
+    def requeue_after_preemption(self, process: Process, current_time: int | None = None) -> None:
         process.set_state(ProcessState.READY)
         self._ready_queue.append(process)
         self._quantum_start = None

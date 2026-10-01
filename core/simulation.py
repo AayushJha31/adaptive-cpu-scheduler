@@ -250,8 +250,13 @@ class CPUSimulation:
             return
 
         process = self._running_process
-        process.set_state(ProcessState.READY)
-        self._scheduler.add_process(process)
+
+        requeue = getattr(self._scheduler, "requeue_after_preemption", None)
+        if callable(requeue):
+            requeue(process, self._current_time)
+        else:
+            process.set_state(ProcessState.READY)
+            self._scheduler.add_process(process)
 
         self._record_event(
             "PREEMPT",
