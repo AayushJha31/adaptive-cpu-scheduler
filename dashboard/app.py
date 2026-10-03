@@ -1,10 +1,15 @@
+import os
 import sys
 from pathlib import Path
 
-# Add project root directory to Python path
+# Get project root (parent directory of 'dashboard')
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
+# Force root directory to the top of Python's import paths
 if str(ROOT_DIR) not in sys.path:
-    sys.path.append(str(ROOT_DIR))
+    sys.path.insert(0, str(ROOT_DIR))
+
+os.chdir(ROOT_DIR)
 
 import json
 import streamlit as st
