@@ -75,3 +75,29 @@ def test_mlfq_demotes_after_quantum():
 
     second = scheduler.get_next_process()
     assert second is p2
+
+
+def test_priority_aging_is_used_when_dispatching():
+    scheduler = PriorityScheduler(aging_interval=2)
+    waiting = Process(1, 0, 5, [2])
+    other = Process(2, 0, 3, [2])
+
+    scheduler.add_process(waiting)
+    scheduler.on_time_advance(6)
+    scheduler.add_process(other)
+
+    # The long-waiting process ages from priority 5 to effective priority 2.
+    assert scheduler.get_next_process() is waiting
+
+
+def test_mlfq_priority_boost_is_applied_by_simulation_time():
+    scheduler = MLFQScheduler(quantums=(1, 2), boost_interval=3)
+    process = Process(1, 0, 1, [8])
+    scheduler.add_process(process)
+    selected = scheduler.get_next_process()
+    scheduler.on_dispatch(selected, 0)
+    scheduler.requeue_after_preemption(selected, 1)
+    assert scheduler._levels[selected.pid] == 1
+
+    scheduler.on_time_advance(3)
+    assert scheduler._levels[selected.pid] == 0

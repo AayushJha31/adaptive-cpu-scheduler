@@ -123,6 +123,9 @@ class MLFQScheduler(Scheduler):
         self._queues[new_level].append(process)
         self._dispatch_time = None
 
+    def on_time_advance(self, current_time: int) -> None:
+        self.priority_boost(current_time)
+
     def priority_boost(self, current_time: int) -> None:
         if current_time - self._last_boost < self._boost_interval:
             return

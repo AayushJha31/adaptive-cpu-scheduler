@@ -74,15 +74,15 @@ These components can be added without rewriting the existing scheduling backend.
 
 # 3. Technology Stack
 
-| Technology | Purpose |
-| --- | --- |
-| Python | Main programming language |
-| NumPy | Numerical calculations |
-| Pandas | Result tables and experiment analysis |
-| Matplotlib | Gantt charts and performance plots |
-| Streamlit | Interactive dashboard |
-| pytest | Automated testing |
-| Git/GitHub | Version control |
+| Technology | Purpose                               |
+| ---------- | ------------------------------------- |
+| Python     | Main programming language             |
+| NumPy      | Numerical calculations                |
+| Pandas     | Result tables and experiment analysis |
+| Matplotlib | Gantt charts and performance plots    |
+| Streamlit  | Interactive dashboard                 |
+| pytest     | Automated testing                     |
+| Git/GitHub | Version control                       |
 
 ---
 
@@ -915,90 +915,7 @@ must pass.
 
 ---
 
-# 24. Git Workflow
-
-Create a branch for a feature:
-
-```bash
-git checkout -b feature/workload-adaptive-analysis
-```
-
-After implementation:
-
-```bash
-git add .
-git commit -m "feat: add workload adaptive experiment pipeline"
-git push origin feature/workload-adaptive-analysis
-```
-
-Use small, meaningful commits where practical.
-
-Recommended examples:
-
-```text
-feat(workloads): add reproducible workload generator
-```
-
-```text
-feat(workloads): add workload json and csv io
-```
-
-```text
-feat(analysis): add workload feature extraction
-```
-
-```text
-feat(adaptive): add policy suitability scoring
-```
-
-```text
-feat(adaptive): add workload-based decision engine
-```
-
-```text
-feat(experiments): add multi-policy experiment runner
-```
-
-```text
-feat(visualization): add gantt and comparison charts
-```
-
-```text
-feat(dashboard): add streamlit scheduling dashboard
-```
-
-```text
-test: add workload and adaptive engine coverage
-```
-
----
-
-# 25. .gitignore
-
-The repository should not commit:
-
-```text
-.venv/
-__pycache__/
-.pytest_cache/
-*.pyc
-```
-
-A typical `.gitignore` contains:
-
-```gitignore
-.venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.coverage
-htmlcov/
-.DS_Store
-```
-
----
-
-# 26. Important Design Rules
+# 24. Important Design Rules
 
 ## Do not hard-code results
 
@@ -1052,7 +969,7 @@ Machine learning is optional and should only be introduced if there is a meaning
 
 ---
 
-# 27. Academic Positioning
+# 25. Academic Positioning
 
 This project is best described as:
 
@@ -1070,7 +987,7 @@ The project is an experimental and educational scheduling framework.
 
 ---
 
-# 28. Recommended Demonstration
+# 26. Recommended Demonstration
 
 For the final presentation:
 
@@ -1122,7 +1039,7 @@ Do not claim that a policy must always be selected for a workload class. The act
 
 ---
 
-# 29. Research Question
+# 27. Research Question
 
 The project can be presented around this research question:
 
@@ -1132,7 +1049,7 @@ The experiments should investigate this question using measurable metrics rather
 
 ---
 
-# 30. Limitations
+# 28. Limitations
 
 Current/possible limitations include:
 
@@ -1150,42 +1067,7 @@ These limitations should be documented rather than hidden.
 
 ---
 
-# 31. Final Definition of Done
-
-The complete project is ready for final submission when:
-
-- [x] Process model implemented
-- [x] Scheduler interface implemented
-- [x] Discrete-event simulator implemented
-- [x] FCFS implemented
-- [x] SJF implemented
-- [x] SRTF implemented
-- [x] Round Robin implemented
-- [x] Priority implemented
-- [x] Priority aging implemented
-- [x] MLFQ implemented
-- [x] Performance metrics implemented
-- [x] Context-switch analysis implemented
-- [x] Fairness analysis implemented
-- [x] Starvation analysis implemented
-- [x] Reporting implemented
-- [x] Automated backend tests implemented
-- [ ] Workload generator integrated
-- [ ] Workload I/O integrated
-- [ ] Workload analyzer integrated
-- [ ] Adaptive decision engine integrated
-- [ ] Experiment runner integrated
-- [ ] Visualization integrated
-- [ ] Streamlit dashboard integrated
-- [ ] Final integration tests passing
-- [ ] Final README updated
-- [ ] Final demo verified
-
-The checked items represent the completed backend work.
-
----
-
-# 32. Quick Start
+# 29. Quick Start
 
 Once the repository is complete:
 
@@ -1204,35 +1086,3 @@ python main.py
 
 streamlit run dashboard/app.py
 ```
-
----
-
-# 33. Team Development Principle
-
-Keep the project modular.
-
-The most important dependency flow is:
-
-```text
-Workload
-   ↓
-Analysis
-   ↓
-Adaptive Decision
-   ↓
-Existing Scheduler
-   ↓
-Existing Simulation Engine
-   ↓
-Existing Metrics
-   ↓
-Experiment
-   ↓
-Visualization
-   ↓
-Dashboard
-```
-
-The existing scheduling backend should remain reusable and independent of the UI.
-
-That separation makes the project easier to test, demonstrate, explain in the viva, and extend in the future.

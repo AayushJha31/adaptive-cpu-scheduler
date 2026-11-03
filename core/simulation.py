@@ -208,6 +208,7 @@ class CPUSimulation:
     def _execute_until(self, end_time: int) -> None:
         if self._running_process is None:
             self._current_time = end_time
+            self._scheduler.on_time_advance(self._current_time)
             return
 
         duration = end_time - self._current_time
@@ -218,6 +219,7 @@ class CPUSimulation:
         start_time = self._current_time
         process.execute(duration)
         self._current_time = end_time
+        self._scheduler.on_time_advance(self._current_time)
 
         if self._timeline:
             last = self._timeline[-1]
@@ -294,6 +296,7 @@ class CPUSimulation:
                             details=f"CPU idle until t={next_arrival}",
                         )
                         self._current_time = next_arrival
+                        self._scheduler.on_time_advance(self._current_time)
                     continue
 
             process = self._running_process

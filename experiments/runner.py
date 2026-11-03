@@ -54,6 +54,30 @@ class ExperimentRunner:
             "MLFQ": MLFQScheduler(),
         }
 
+    @staticmethod
+    def scheduler_for_policy(policy_name: str) -> Any:
+        """Create a fresh scheduler instance for the requested policy."""
+        if policy_name == "FCFS":
+            return FCFSScheduler()
+        if policy_name == "SJF":
+            return SJFScheduler()
+        if policy_name == "SRTF":
+            return SRTFScheduler()
+        if policy_name == "Round Robin":
+            return RoundRobinScheduler(time_quantum=2)
+        if policy_name == "Priority":
+            return PriorityScheduler()
+        if policy_name == "MLFQ":
+            return MLFQScheduler()
+        raise ValueError(f"Unknown scheduling policy: {policy_name}")
+
+    @staticmethod
+    def _clone_processes(workload: Workload) -> list[Process]:
+        return [
+            ExperimentRunner._coerce_process(spec)
+            for spec in workload.processes
+        ]
+
     @classmethod
     def run_comparison(cls, workload: Workload) -> pd.DataFrame:
         if workload is None or not workload.processes:
@@ -67,13 +91,20 @@ class ExperimentRunner:
                     "Throughput",
                     "CPU Utilization",
                     "Context Switches",
+                    "Adaptive Selection",
                 ]
             )
 
-        processes = [cls._coerce_process(spec) for spec in workload.processes]
         results = []
+        features = WorkloadAnalyzer.analyze(workload)
+        adaptive_decision = AdaptiveDecisionEngine().select_policy(features)
+        policies = list(cls.get_schedulers().items())
+        policies.append(("Adaptive", cls.scheduler_for_policy(adaptive_decision.selected_policy)))
 
-        for name, scheduler in cls.get_schedulers().items():
+        for name, scheduler in policies:
+            # Every policy must receive pristine process objects; simulations mutate
+            # process state, remaining burst, and timing fields.
+            processes = cls._clone_processes(workload)
             result = CPUSimulation(processes, scheduler).run()
             analysis = analyze_simulation(result, scheduler.name)
             metrics = analysis.metrics
@@ -88,6 +119,7 @@ class ExperimentRunner:
                     "Throughput": float(metrics.throughput),
                     "CPU Utilization": float(metrics.cpu_utilization),
                     "Context Switches": int(metrics.context_switches),
+                    "Adaptive Selection": adaptive_decision.selected_policy if name == "Adaptive" else "",
                 }
             )
 

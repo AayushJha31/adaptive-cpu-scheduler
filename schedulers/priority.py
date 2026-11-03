@@ -50,7 +50,7 @@ class PriorityScheduler(Scheduler):
         best_index = min(
             range(len(self._ready_queue)),
             key=lambda i: (
-                self._ready_queue[i].process.priority,
+                self._effective_priority(self._ready_queue[i], self._current_time),
                 self._ready_queue[i].process.arrival_time,
                 self._ready_queue[i].process.pid,
             ),
@@ -61,6 +61,9 @@ class PriorityScheduler(Scheduler):
         return entry.process
 
     def on_dispatch(self, process: Process, current_time: int) -> None:
+        self._current_time = current_time
+
+    def on_time_advance(self, current_time: int) -> None:
         self._current_time = current_time
 
     def should_preempt(

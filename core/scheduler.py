@@ -29,6 +29,10 @@ class Scheduler(ABC):
         """Notify a scheduler that a process has just been dispatched."""
         return None
 
+    def on_time_advance(self, current_time: int) -> None:
+        """Notify policies when simulated time advances."""
+        return None
+
     def next_preemption_time(
         self,
         running_process: Process,
